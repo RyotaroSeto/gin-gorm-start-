@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+    go:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile.local
+        volumes:
+            - ./backend:/go/src/backend
+        working_dir: /go/src/backend
+        environment:
+            TZ: Asia/Tokyo
+        ports:
+            - 8080:8080
+            - 2345:2345
+        security_opt:
+            - apparmor:unconfined
+        cap_add:
+            - SYS_PTRACE
+        healthcheck:
+            test:
+                [
+                  "CMD-SHELL",
+                  'wget --header="Content-Type: application/json" -q -O - http://localhost:8080/health_check || exit 1',
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+
+    mysql:
+        build: ./mysql
+        environment:
+            TZ: Asia/Tokyo
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: backend
+        ports:
+            - 3306:3306
+        volumes:
+            - mysql_volume:/var/lib/mysql
+
+volumes:
+    mysql_volume:
